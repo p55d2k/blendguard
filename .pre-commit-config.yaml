@@ -33,7 +33,21 @@ repos:
       - id: check-yaml
       - id: check-json
       - id: check-executables-have-shebangs
+
+      # npm rewrites package.json / package-lock.json without a trailing
+      # newline, so this hook would fail CI on any commit that ran `npm install`.
+      # Those files are machine-owned; do not hand-format them.
       - id: end-of-file-fixer
+        exclude: |
+          (?x)^(
+            context\.md|
+            CONTEXT\.md|
+            tasks/|
+            data/(?!README)|
+            docs/scratch/|
+            frontend/package(-lock)?\.json
+          )$
+
       - id: mixed-line-ending
         args: [--fix=lf]
       - id: trailing-whitespace
