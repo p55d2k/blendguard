@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  UV_FROZEN: "1"
+
+jobs:
+  pre-commit:
+    name: pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Sync backend (needed by the local hooks)
+        run: uv sync --directory backend --frozen
+
+      - name: Install frontend (needed by the local hooks)
+        working-directory: frontend
+        run: npm ci
+
+      - uses: pre-commit/action@v3.0.1
+
+  backend:
+    name: backend (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install
+        run: uv sync --directory backend --frozen --all-groups
+
+      - name: ruff format --check
+        run: uv run --directory backend --frozen ruff format --check
+
+      - name: ruff check
+        run: uv run --directory backend --frozen ruff check
+
+      - name: mypy (strict)
+        run: uv run --directory backend --frozen mypy app
+
+      - name: pytest (offline)
+        run: >-
+          uv run --directory backend --frozen pytest
+          -m "not integration and not bloomberg and not slow"
+          --cov=app --cov-report=term-missing --cov-report=xml
+
+      - name: Verify no secrets or licensed data are tracked
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -Ei '(^|/)\.env$|\.pem$|\.key$|^data/' \
+             | grep -v '^data/README.md$'; then
+            echo "::error::tracked secret or licensed dataset found"
+            exit 1
+          fi
+          echo "no tracked secrets or licensed datasets"
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-py${{ matrix.python-version }}
+          path: backend/coverage.xml
+          if-no-files-found: ignore
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  secret-scan:
+    name: secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Scan tracked files for credential patterns
+        run: |
+          set -euo pipefail
+          if git grep -nEI \
+            '(api[_-]?key|client[_-]?secret|password)[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9/+_-]{16,}' \
+            -- ':!*.lock' ':!frontend/package-lock.json' ':!docs/*'; then
+            echo "::error::possible hardcoded credential"
+            exit 1
+          fi
+          echo "no credential patterns found"

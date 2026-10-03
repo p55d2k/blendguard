@@ -1,0 +1,86 @@
+# ---------------------------------------------------------------------------
+# Secrets — never commit (see README.md)
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ---------------------------------------------------------------------------
+# Local, non-public working files — deliberately never committed
+# ---------------------------------------------------------------------------
+/tasks/
+/context.md
+CONTEXT.md
+AGENTS.md
+CLAUDE.md
+CLAUDE.local.md
+GEMINI.md
+*.local.md
+
+# ---------------------------------------------------------------------------
+# Python / uv (backend/)
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.egg-info/
+dist/
+build/
+
+# ---------------------------------------------------------------------------
+# Market data — never commit Bloomberg or licensed provider datasets
+# (see docs/architecture.md)
+/data/*
+!/data/README.md
+/data/cache/
+/data/raw/
+/data/*.parquet
+/data/*.csv
+/data/*.db
+/data/*.sqlite*
+/backend/blpapi/
+
+# ---------------------------------------------------------------------------
+# Node / Next.js (frontend/)
+# ---------------------------------------------------------------------------
+node_modules/
+.pnpm-store/
+.next/
+out/
+next-env.d.ts
+.turbo/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---------------------------------------------------------------------------
+# Caches / local databases
+# ---------------------------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+.cache/
+
+# ---------------------------------------------------------------------------
+# OS / editor
+# ---------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json.example
+*.swp

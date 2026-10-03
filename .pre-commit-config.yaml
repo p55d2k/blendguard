@@ -1,0 +1,120 @@
+# Pre-commit hooks for BlendGuard.
+#
+# Install once:  uv tool install pre-commit  (or pipx install pre-commit)
+# Then:           pre-commit install
+# Run everything: make precommit
+#
+# The same config runs in CI (.github/workflows/ci.yml), so a green local run
+# and a green CI run enforce identical rules.
+
+default_language_version:
+  python: python3.12
+
+# Never touch local-only files, even if they are somehow staged.
+exclude: |
+  (?x)^(
+    context\.md|
+    CONTEXT\.md|
+    tasks/|
+    data/(?!README)|
+    docs/scratch/
+  )$
+
+repos:
+  # ---------------------------------------------------------------- generic
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: [--maxkb=512]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: check-json
+      - id: check-executables-have-shebangs
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: trailing-whitespace
+
+  # ---------------------------------------------------------------- backend
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --directory backend --frozen ruff format
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --directory backend --frozen ruff check --fix
+        language: system
+        types: [python]
+        require_serial: true
+        pass_filenames: false
+
+      - id: ruff-format-check
+        name: ruff format --check
+        entry: uv run --directory backend --frozen ruff format --check
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: mypy
+        name: mypy (strict)
+        entry: uv run --directory backend --frozen mypy app
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: pytest
+        name: pytest (offline)
+        entry: >-
+          uv run --directory backend --frozen pytest
+          -p no:cacheprovider
+          -m "not integration and not bloomberg and not slow"
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: pytest-integration
+        name: pytest (integration, needs network/market data)
+        entry: >-
+          uv run --directory backend --frozen pytest
+          -p no:cacheprovider
+          -m "integration and not bloomberg"
+        language: system
+        stages: [manual]
+        always_run: true
+        pass_filenames: false
+
+      - id: pytest-bloomberg
+        name: pytest (bloomberg, needs a Desktop API session)
+        entry: >-
+          uv run --directory backend --frozen pytest
+          -p no:cacheprovider
+          -m "bloomberg"
+        language: system
+        stages: [manual]
+        always_run: true
+        pass_filenames: false
+
+  # ---------------------------------------------------------------- frontend
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: npm --prefix frontend run --silent lint
+        language: system
+        files: \.(ts|tsx|js|jsx|mjs|cjs)$
+        pass_filenames: false
+
+      - id: tsc
+        name: tsc --noEmit
+        entry: npm --prefix frontend run --silent typecheck
+        language: system
+        types_or: [ts, tsx]
+        pass_filenames: false
