@@ -22,6 +22,15 @@ updates:
       - dependency-name: typescript
         versions: [">=7.0.0"]
 
+      # ESLint 10 removed `context.getFilename()`, which the eslint-plugin-react
+      # bundled in eslint-config-next still calls. Lint dies on the first rule
+      # load with "contextOrFilename.getFilename is not a function".
+      # eslint-config-next is already at its latest release (16.3.8), so there
+      # is no version to upgrade into. Raise this ceiling once
+      # eslint-config-next ships an ESLint 10 compatible plugin.
+      - dependency-name: eslint
+        versions: [">=10.0.0"]
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
