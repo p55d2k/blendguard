@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
+from app.api.universe import router as universe_router
 from app.config import get_settings
 
 settings = get_settings()
@@ -29,6 +30,8 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+app.include_router(universe_router)
 
 
 @app.get("/health", tags=["meta"])

@@ -6,8 +6,8 @@ boundaries.
 
 ## ETF universe
 
-Fixed and small on purpose. A small, understandable universe keeps the model
-validatable and the UI explainable.
+Fixed and small on purpose: **nine supported ETFs**, defined once in
+`backend/app/universe.py` and classified by `backend/app/taxonomy.py`.
 
 | Asset class | Tickers |
 | --- | --- |
@@ -15,8 +15,9 @@ validatable and the UI explainable.
 | High yield | HYG, JNK |
 | Treasury | SHY, IEF, TLT |
 
-Defined once in `backend/app/universe.py`. Expanding it is a deliberate,
-documented change — not an accident of whatever data happens to be available.
+Each record also carries a region, a core/satellite exposure flag, a portfolio
+role, and a plain-language description. Full metadata, rationale per ETF, and
+the process for expanding the universe are in [universe.md](./universe.md).
 
 ## Stage 1 — market data and risk estimation
 

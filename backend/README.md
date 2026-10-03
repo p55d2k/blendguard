@@ -20,7 +20,8 @@ Requires Python 3.12 (pinned in `.python-version`).
 ```
 app/
 ├── main.py            FastAPI entrypoint
-├── universe.py        the fixed initial ETF universe
+├── universe.py        the canonical ETF universe
+├── taxonomy.py        classification vocabulary
 ├── config/            settings from environment variables
 ├── providers/         DATA — MarketDataProvider interface
 │   ├── base.py        Asset / PriceSeries / MarketData + abstract provider

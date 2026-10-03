@@ -12,10 +12,15 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from app.providers.base import MarketData
+from app.taxonomy import AssetClass, Region
+from app.universe import TICKERS, UNIVERSE
+
 
 @pytest.fixture
 def tickers() -> list[str]:
-    return ["VOO", "VTI", "VEA", "VWO", "HYG", "JNK", "SHY", "IEF", "TLT"]
+    """The full canonical universe."""
+    return list(TICKERS)
 
 
 @pytest.fixture
@@ -33,27 +38,29 @@ def synthetic_prices(tickers: list[str]) -> pd.DataFrame:
 
 
 @pytest.fixture
-def synthetic_market_data(synthetic_prices: pd.DataFrame, tickers: list[str]):
-    from app.providers.base import Asset, AssetClass, MarketData
+def synthetic_market_data(synthetic_prices: pd.DataFrame, tickers: list[str]) -> MarketData:
+    """Market data for the canonical universe, using canonical reference data.
 
-    classes = {
-        "VOO": AssetClass.EQUITY,
-        "VTI": AssetClass.EQUITY,
-        "VEA": AssetClass.EQUITY,
-        "VWO": AssetClass.EQUITY,
-        "HYG": AssetClass.HIGH_YIELD,
-        "JNK": AssetClass.HIGH_YIELD,
-        "SHY": AssetClass.TREASURY,
-        "IEF": AssetClass.TREASURY,
-        "TLT": AssetClass.TREASURY,
-    }
-    assets = {t: Asset(ticker=t, name=f"{t} Test ETF", asset_class=classes[t]) for t in tickers}
+    Reference data comes from the universe so fixtures cannot drift from what
+    the API and the model report.
+    """
+    assets = {t: UNIVERSE[t].to_asset() for t in tickers}
     return MarketData(
         prices=synthetic_prices,
         assets=assets,
         market_caps=dict.fromkeys(tickers, 100000000000.0),
         as_of=date(2021, 12, 31),
     )
+
+
+@pytest.fixture
+def equity_tickers() -> list[str]:
+    return [t for t in TICKERS if UNIVERSE[t].asset_class is AssetClass.EQUITY]
+
+
+@pytest.fixture
+def treasury_tickers() -> list[str]:
+    return [t for t in TICKERS if UNIVERSE[t].region is Region.US and UNIVERSE[t].is_treasury]
 
 
 @pytest.fixture

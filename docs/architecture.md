@@ -52,6 +52,12 @@ PriceSeries ticker, start, end, adjusted_close
 MarketData  prices, assets, market_caps, metadata, as_of
 ```
 
+`Asset` is what a *data vendor* can tell you. BlendGuard's curated ETF metadata
+(portfolio role, core/satellite exposure, plain-language description, support
+status) lives in `app/universe.py` and projects down to `Asset` via
+`ETF.to_asset()`. There is exactly one literal table; see
+[universe.md](./universe.md).
+
 `MarketData.returns()` is the single definition of a daily return:
 
 ```
@@ -110,7 +116,8 @@ optimizer  ←───────────────────── op
 ```
 backend/app/
 ├── main.py            FastAPI entrypoint, /health, CORS
-├── universe.py        the fixed initial ETF universe
+├── universe.py        the canonical ETF universe
+├── taxonomy.py        classification vocabulary
 ├── config/            settings from environment variables
 ├── providers/         DATA — MarketDataProvider interface
 ├── optimizer/         MODEL + OPTIMIZER
@@ -137,7 +144,7 @@ No finance logic lives in the frontend.
 
 ```
 POST /api/optimize     optimize a portfolio
-GET  /api/universe     the fixed ETF universe
+GET  /api/universe     the canonical ETF universe (see universe.md)
 GET  /api/presets      role-based preset constraints
 GET  /health           liveness
 ```

@@ -1,7 +1,12 @@
-"""Provider interface and normalized data model (see docs/architecture.md).
+"""Provider interface and normalized data model.
 
 Provider-specific payloads are converted to these types *before* reaching the
 mathematical layer. Nothing here may import an optimizer or model symbol.
+
+``Asset`` is the provider-normalized shape of reference data: what a data vendor
+can tell us about a security. BlendGuard's curated ETF metadata (portfolio role,
+exposure kind, plain-language description, support status) lives in
+:mod:`app.universe` and projects down to ``Asset`` via ``ETF.to_asset()``.
 """
 
 from __future__ import annotations
@@ -9,27 +14,20 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date
-from enum import StrEnum
 
 import pandas as pd
 
-
-class AssetClass(StrEnum):
-    """Asset classes present in the initial universe (see docs/model.md)."""
-
-    EQUITY = "equity"
-    HIGH_YIELD = "high_yield"
-    TREASURY = "treasury"
+from app.taxonomy import AssetClass, Region
 
 
 @dataclass(frozen=True, slots=True)
 class Asset:
-    """Normalized security reference data."""
+    """Normalized security reference data, as reported by a data provider."""
 
     ticker: str
     name: str
     asset_class: AssetClass
-    region: str | None = None
+    region: Region
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,7 +55,7 @@ class MarketData:
     assets:
         Reference data keyed by ticker.
     market_caps:
-        Optional market caps in USD, used for the market-implied prior (see docs/model.md).
+        Optional market caps in USD, used for the market-implied prior.
     as_of:
         Last date present in ``prices``.
     """
@@ -75,7 +73,7 @@ class MarketData:
             object.__setattr__(self, "as_of", self.prices.index[-1].date())
 
     def returns(self) -> pd.DataFrame:
-        """Simple daily returns ``r_t = P_t / P_(t-1) - 1`` (see docs/model.md)."""
+        """Simple daily returns ``r_t = P_t / P_(t-1) - 1``."""
         return self.prices.pct_change().iloc[1:].dropna(how="any")
 
     def tickers(self) -> list[str]:

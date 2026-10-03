@@ -11,11 +11,11 @@ provider. The optimizer must never import anything Bloomberg-specific beyond the
 
 from app.providers.base import (
     Asset,
-    AssetClass,
     MarketData,
     MarketDataProvider,
     PriceSeries,
 )
+from app.taxonomy import AssetClass, Region
 
 __all__ = [
     "Asset",
@@ -23,4 +23,5 @@ __all__ = [
     "MarketData",
     "MarketDataProvider",
     "PriceSeries",
+    "Region",
 ]
