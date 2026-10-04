@@ -140,6 +140,22 @@ frontend/lib/          API client, consumer-facing vocabulary
 
 No finance logic lives in the frontend.
 
+## Testing
+
+| Suite | Runner | Command | Notes |
+| --- | --- | --- | --- |
+| backend | pytest | `make test-backend` | `integration`, `bloomberg` and `slow` markers are opt-in |
+| frontend | vitest + Testing Library | `make test-frontend` | jsdom; colocated in `__tests__/` |
+
+Both suites are wired into pre-commit, CI and `make check`, so a green local run
+and a green CI run enforce identical rules. Backend runs `mypy --strict`;
+frontend test files are inside the `tsc --noEmit` and eslint globs, so a broken
+test also fails `make typecheck`.
+
+Frontend tests assert project invariants rather than incidental rendering: the
+universe vocabulary stays fully labelled, and consumer-facing copy never exposes
+quant jargon. See `frontend/README.md`.
+
 ## API
 
 ```

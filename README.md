@@ -69,7 +69,7 @@ Requires Python 3.12 and Node 22+.
 ```bash
 make install      # install backend + frontend dependencies
 make dev          # run both dev servers
-make test         # backend tests (offline only)
+make test         # backend + frontend tests (offline only)
 make lint         # ruff + eslint
 make typecheck    # mypy --strict + tsc --noEmit
 make check        # lint + typecheck + test
@@ -89,6 +89,7 @@ cd frontend
 npm run dev
 npm run lint
 npm run typecheck
+npm test
 ```
 
 ## Quality gates
@@ -104,7 +105,7 @@ commit runs:
 | `ruff format`, `ruff check --fix`, `ruff format --check` | backend |
 | `mypy --strict` | backend |
 | `pytest` (offline markers only) | backend |
-| `eslint`, `tsc --noEmit` | frontend |
+| `eslint`, `tsc --noEmit`, `vitest` | frontend |
 
 Tests requiring a network, market data, or a Bloomberg session are opt-in and
 never run in the default hook:

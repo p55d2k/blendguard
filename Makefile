@@ -5,7 +5,8 @@ BACKEND  := backend
 FRONTEND := frontend
 
 .PHONY: help install install-backend install-frontend dev dev-backend dev-frontend \
-        test lint typecheck fmt check clean \
+        test test-backend test-frontend test-all \
+        lint typecheck fmt check clean \
         hooks hooks-install hooks-update precommit
 
 help: ## Show this help
@@ -35,8 +36,16 @@ dev-frontend: ## Frontend only
 	cd $(FRONTEND) && npm run dev
 
 # --- quality ---------------------------------------------------------------
-test: ## Run backend tests (offline only)
-	cd $(BACKEND) && uv run pytest
+# The default marker filter mirrors CI so `make test` is genuinely offline.
+OFFLINE = -m "not integration and not bloomberg and not slow"
+
+test: test-backend test-frontend ## Run backend + frontend tests (offline only)
+
+test-backend: ## Backend tests only (offline)
+	cd $(BACKEND) && uv run pytest $(OFFLINE)
+
+test-frontend: ## Frontend tests only
+	cd $(FRONTEND) && npm test
 
 test-all: ## Run backend tests including integration/bloomberg markers
 	cd $(BACKEND) && uv run pytest -m ""

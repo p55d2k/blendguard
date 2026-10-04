@@ -1,6 +1,7 @@
 # BlendGuard Frontend
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4 · Recharts 3.
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4 · Recharts 3 ·
+Vitest 3 + Testing Library.
 
 PRESENTATION layer only. No finance logic, no covariance matrices, no solver
 knowledge in this app.
@@ -27,6 +28,31 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 | `npm run start` | serve the production build |
 | `npm run lint` | eslint (`next/core-web-vitals` + `next/typescript`) |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | vitest, single run (jsdom) |
+| `npm run test:watch` | vitest in watch mode |
+
+## Testing
+
+Tests live next to the code they cover, in a `__tests__/` folder
+(`lib/__tests__/`, `app/__tests__/`). They are included in `tsc --noEmit` and
+in eslint, so a broken test fails `make typecheck` and `make lint` too.
+
+```bash
+npm test
+npm test -- lib/__tests__/universe.test.ts   # single file
+```
+
+Two invariants are worth preserving, because they encode project rules rather
+than incidental behaviour:
+
+- `lib/__tests__/universe.test.ts` fails if a value is added to `ASSET_CLASSES`,
+  `REGIONS` or `ROLES` without a matching label. An unlabelled value renders as
+  `undefined` in the UI.
+- `lib/__tests__/vocabulary.test.ts` fails if a consumer-facing label ever
+  contains quant jargon (`tau`, `covariance`, `posterior`, …). See CONTEXT.md §2.
+
+Component tests must keep the PRESENTATION layer clean: mock the network at the
+`fetch` boundary and never import finance code to make a test pass.
 
 ## Layout
 

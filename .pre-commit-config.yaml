@@ -132,3 +132,11 @@ repos:
         language: system
         types_or: [ts, tsx]
         pass_filenames: false
+
+      - id: vitest
+        name: vitest
+        entry: npm --prefix frontend run --silent test
+        language: system
+        types_or: [ts, tsx]
+        require_serial: true
+        pass_filenames: false
