@@ -153,10 +153,11 @@ def test_require_date_rejects_non_dates() -> None:
         require_date("2024-03-15", "day")  # type: ignore[arg-type]
 
 
-def test_currency_is_usd_only() -> None:
-    # The universe is entirely USD-denominated; widening this is a deliberate
-    # decision, and it should be visible in the code rather than discovered later.
-    assert [c.value for c in Currency] == ["usd"]
+def test_currency_covers_the_universe_pricing_currencies() -> None:
+    # One member per currency a supported ETF is priced in. Widening this is a
+    # deliberate decision, and it should be visible in the code rather than
+    # discovered later.
+    assert [c.value for c in Currency] == ["usd", "sgd"]
 
 
 def test_finite_check_does_not_lose_tiny_values() -> None:

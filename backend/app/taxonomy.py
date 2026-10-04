@@ -15,24 +15,35 @@ from enum import StrEnum
 
 
 class AssetClass(StrEnum):
-    """The three initial asset classes."""
+    """The asset classes BlendGuard distinguishes.
+
+    Credit quality is modelled separately because it is what an investor's
+    beliefs are usually about: investment-grade corporate credit, speculative
+    high yield, and emerging-market sovereign credit behave differently in the
+    same rate or growth shock.
+    """
 
     EQUITY = "equity"
     HIGH_YIELD = "high_yield"
     TREASURY = "treasury"
+    INVESTMENT_GRADE = "investment_grade"
+    EMERGING_DEBT = "emerging_debt"
 
 
 class Region(StrEnum):
     """Broad portfolio-level geographic exposure.
 
     Countries, currency exposure, and sectors are intentionally not modelled.
-    Fixed-income ETFs are all ``US`` because the initial Treasury and high-yield
-    universe represents the US fixed-income market.
+    The US Treasury, investment-grade and high-yield ETFs are all ``US`` because
+    those markets are. ``SINGAPORE`` is the one single-country member: the
+    Straits Times ETF *is* the Singapore exposure, so grouping it under a wider
+    bucket would add a distinction the model cannot act on.
     """
 
     US = "us"
     DEVELOPED_EX_US = "developed_ex_us"
     EMERGING_MARKETS = "emerging_markets"
+    SINGAPORE = "singapore"
 
 
 class Exposure(StrEnum):
@@ -46,8 +57,9 @@ class Role(StrEnum):
     """Why an ETF exists in a portfolio.
 
     Roles let the model reason about *purpose* rather than ticker identity.
-    Overlapping ETFs deliberately share a role: ``HYG`` and ``JNK`` are both
-    ``HIGH_YIELD_CREDIT``. Roles are not forced to be unique per ticker.
+    Overlapping ETFs deliberately share a role: ``HYG``, ``JNK`` and ``USHY``
+    are all ``HIGH_YIELD_CREDIT``, and ``VOO`` and ``SPY`` are both
+    ``US_LARGE_CAP_CORE``. Roles are not forced to be unique per ticker.
     """
 
     US_LARGE_CAP_CORE = "us_large_cap_core"
@@ -58,6 +70,9 @@ class Role(StrEnum):
     SHORT_DURATION_TREASURY = "short_duration_treasury"
     INTERMEDIATE_TREASURY = "intermediate_treasury"
     LONG_DURATION_TREASURY = "long_duration_treasury"
+    INVESTMENT_GRADE_CREDIT = "investment_grade_credit"
+    EM_LOCAL_CURRENCY_DEBT = "em_local_currency_debt"
+    SINGAPORE_LARGE_CAP = "singapore_large_cap"
 
 
 #: Treasury roles ordered by increasing interest-rate duration.

@@ -42,8 +42,11 @@ class Asset:
 def asset_from_etf(etf: ETF) -> Asset:
     """Project curated ETF metadata onto the provider-normalized type.
 
-    Drops role, exposure, description and support status: those are BlendGuard's
-    own opinions, not vendor facts, and the provider layer has no use for them.
+    Drops role, exposure, description, currency and support status: the first
+    four are BlendGuard's own classification rather than vendor facts, and
+    support status is BlendGuard's decision. Currency stays in
+    :mod:`app.universe` rather than here because this module must not import the
+    domain at runtime.
     """
     return Asset(
         ticker=str(etf.ticker),

@@ -7,7 +7,7 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from app.domain.etf import ETF
-from app.domain.types import DomainValidationError, Ticker
+from app.domain.types import Currency, DomainValidationError, Ticker
 from app.models.universe import ETFOut
 from app.taxonomy import AssetClass, Exposure, Region, Role
 from app.universe import TICKERS, UNIVERSE, get
@@ -20,6 +20,7 @@ def an_etf(**overrides: object) -> ETF:
         "name": "Vanguard S&P 500 ETF",
         "asset_class": AssetClass.EQUITY,
         "region": Region.US,
+        "currency": Currency.USD,
         "role": Role.US_LARGE_CAP_CORE,
         "exposure": Exposure.CORE,
         "description": "US large-company stocks.",
@@ -32,6 +33,13 @@ def an_etf(**overrides: object) -> ETF:
 def test_an_etf_requires_a_validated_ticker() -> None:
     with pytest.raises(DomainValidationError, match="wrap it with Ticker"):
         an_etf(ticker="VOO")
+
+
+def test_an_etf_requires_a_known_currency() -> None:
+    # A free-form currency string would let an SGD fund be read as a USD one, so
+    # the field is a closed set rather than text.
+    with pytest.raises(DomainValidationError, match="currency must be a Currency"):
+        an_etf(currency="SGD")
 
 
 def test_an_etf_requires_a_name() -> None:
@@ -86,6 +94,7 @@ def test_to_dict_is_json_ready() -> None:
     payload = get("TLT").to_dict()
     assert payload["ticker"] == "TLT"
     assert payload["asset_class"] == "treasury"
+    assert payload["currency"] == "usd"
     assert payload["supported"] is True
 
 

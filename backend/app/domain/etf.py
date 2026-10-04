@@ -16,6 +16,7 @@ from dataclasses import dataclass
 
 from app.domain.types import (
     AssetClass,
+    Currency,
     DomainValidationError,
     Exposure,
     Region,
@@ -37,9 +38,12 @@ class ETF:
     name:
         Full fund name.
     asset_class:
-        One of the three initial asset classes.
+        One of the asset classes in :mod:`app.taxonomy`.
     region:
         Broad portfolio-level geographic exposure.
+    currency:
+        Currency the ETF is priced in. Not the same as the exposure's currency:
+        an EM local-currency bond fund listed in the US is priced in USD.
     role:
         Why the ETF exists in a portfolio. Overlapping ETFs may share a role.
     exposure:
@@ -55,6 +59,7 @@ class ETF:
     name: str
     asset_class: AssetClass
     region: Region
+    currency: Currency
     role: Role
     exposure: Exposure
     description: str
@@ -65,6 +70,10 @@ class ETF:
             raise DomainValidationError(
                 f"ticker must be a Ticker, got {type(self.ticker).__name__}; "
                 "wrap it with Ticker(...) so the symbol is validated"
+            )
+        if not isinstance(self.currency, Currency):
+            raise DomainValidationError(
+                f"{self.ticker}: currency must be a Currency, got {self.currency!r}"
             )
         if not self.name.strip():
             raise DomainValidationError(f"{self.ticker}: name must not be empty")
@@ -98,6 +107,7 @@ class ETF:
             "name": self.name,
             "asset_class": str(self.asset_class),
             "region": str(self.region),
+            "currency": str(self.currency),
             "role": str(self.role),
             "exposure": str(self.exposure),
             "description": self.description,

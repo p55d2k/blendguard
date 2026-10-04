@@ -20,7 +20,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from app.domain.etf import ETF
-from app.domain.types import Ticker
+from app.domain.types import Currency, Ticker
 from app.taxonomy import (
     TREASURY_DURATION_ORDER,
     AssetClass,
@@ -30,9 +30,11 @@ from app.taxonomy import (
 )
 
 __all__ = [
+    "EMERGING_DEBT",
     "EQUITIES",
     "ETF",
     "HIGH_YIELD",
+    "INVESTMENT_GRADE",
     "TICKERS",
     "TREASURIES",
     "UNIVERSE",
@@ -67,7 +69,7 @@ class UnsupportedTickerError(ValueError):
 
 
 # ---------------------------------------------------------------------------
-# The universe. Nine ETFs, three asset classes, three regions, eight roles.
+# The universe. Fourteen ETFs, five asset classes, four regions, eleven roles.
 # ---------------------------------------------------------------------------
 #: Keyed by plain ``str`` so a caller holding an unvalidated symbol can look a
 #: record up without a cast; :class:`~app.domain.types.Ticker` hashes equal to its
@@ -81,15 +83,27 @@ UNIVERSE: dict[str, ETF] = {
             name="Vanguard S&P 500 ETF",
             asset_class=AssetClass.EQUITY,
             region=Region.US,
+            currency=Currency.USD,
             role=Role.US_LARGE_CAP_CORE,
             exposure=Exposure.CORE,
             description="US large-company stocks. The default engine of a US equity core.",
+        ),
+        ETF(
+            ticker=Ticker("SPY"),
+            name="SPDR S&P 500 ETF Trust",
+            asset_class=AssetClass.EQUITY,
+            region=Region.US,
+            currency=Currency.USD,
+            role=Role.US_LARGE_CAP_CORE,
+            exposure=Exposure.CORE,
+            description="The oldest S&P 500 tracker. Holds the same large US companies as VOO.",
         ),
         ETF(
             ticker=Ticker("VTI"),
             name="Vanguard Total Stock Market ETF",
             asset_class=AssetClass.EQUITY,
             region=Region.US,
+            currency=Currency.USD,
             role=Role.US_TOTAL_MARKET,
             exposure=Exposure.CORE,
             description="All US stocks, large and small. Broader and cheaper than VOO.",
@@ -99,6 +113,7 @@ UNIVERSE: dict[str, ETF] = {
             name="Vanguard FTSE Developed Markets ETF",
             asset_class=AssetClass.EQUITY,
             region=Region.DEVELOPED_EX_US,
+            currency=Currency.USD,
             role=Role.DEVELOPED_INTERNATIONAL,
             exposure=Exposure.CORE,
             description="Stocks from developed markets outside the United States.",
@@ -108,9 +123,24 @@ UNIVERSE: dict[str, ETF] = {
             name="Vanguard FTSE Emerging Markets ETF",
             asset_class=AssetClass.EQUITY,
             region=Region.EMERGING_MARKETS,
+            currency=Currency.USD,
             role=Role.EMERGING_MARKETS,
             exposure=Exposure.CORE,
             description="Stocks from emerging markets. Higher risk, higher long-run growth.",
+        ),
+        ETF(
+            ticker=Ticker("STTF"),
+            name="State Street SPDR Straits Times Index ETF",
+            asset_class=AssetClass.EQUITY,
+            region=Region.SINGAPORE,
+            currency=Currency.SGD,
+            role=Role.SINGAPORE_LARGE_CAP,
+            exposure=Exposure.CORE,
+            description=(
+                "The blue-chip companies listed in Singapore, in one fund. Priced in "
+                "Singapore dollars, so it carries currency risk the rest of the "
+                "universe does not."
+            ),
         ),
         # --- High yield -------------------------------------------------------
         ETF(
@@ -118,6 +148,7 @@ UNIVERSE: dict[str, ETF] = {
             name="iShares iBoxx $ High Yield Corporate Bond ETF",
             asset_class=AssetClass.HIGH_YIELD,
             region=Region.US,
+            currency=Currency.USD,
             role=Role.HIGH_YIELD_CREDIT,
             exposure=Exposure.SATELLITE,
             description="Lower-rated corporate bonds. More income and default risk than Treasuries.",
@@ -127,9 +158,37 @@ UNIVERSE: dict[str, ETF] = {
             name="SPDR Bloomberg High Yield Bond ETF",
             asset_class=AssetClass.HIGH_YIELD,
             region=Region.US,
+            currency=Currency.USD,
             role=Role.HIGH_YIELD_CREDIT,
             exposure=Exposure.SATELLITE,
             description="A second high-yield fund that overlaps HYG. A way to compare like-for-like.",
+        ),
+        ETF(
+            ticker=Ticker("USHY"),
+            name="iShares Broad USD High Yield Corporate Bond ETF",
+            asset_class=AssetClass.HIGH_YIELD,
+            region=Region.US,
+            currency=Currency.USD,
+            role=Role.HIGH_YIELD_CREDIT,
+            exposure=Exposure.SATELLITE,
+            description=(
+                "High-yield bonds issued in dollars, including issuers outside the "
+                "United States. The widest of the three high-yield funds here."
+            ),
+        ),
+        # --- Investment grade -------------------------------------------------
+        ETF(
+            ticker=Ticker("LQD"),
+            name="iShares iBoxx $ Investment Grade Corporate Bond ETF",
+            asset_class=AssetClass.INVESTMENT_GRADE,
+            region=Region.US,
+            currency=Currency.USD,
+            role=Role.INVESTMENT_GRADE_CREDIT,
+            exposure=Exposure.CORE,
+            description=(
+                "Higher-quality corporate bonds. More income than Treasuries and far "
+                "less default risk than high yield."
+            ),
         ),
         # --- Treasuries -------------------------------------------------------
         ETF(
@@ -137,6 +196,7 @@ UNIVERSE: dict[str, ETF] = {
             name="iShares 1-3 Year Treasury Bond ETF",
             asset_class=AssetClass.TREASURY,
             region=Region.US,
+            currency=Currency.USD,
             role=Role.SHORT_DURATION_TREASURY,
             exposure=Exposure.CORE,
             description="Short-dated US government bonds. The least rate-sensitive sleeve.",
@@ -146,6 +206,7 @@ UNIVERSE: dict[str, ETF] = {
             name="iShares 7-10 Year Treasury Bond ETF",
             asset_class=AssetClass.TREASURY,
             region=Region.US,
+            currency=Currency.USD,
             role=Role.INTERMEDIATE_TREASURY,
             exposure=Exposure.CORE,
             description="Medium-dated US government bonds. The middle of the duration range.",
@@ -155,9 +216,24 @@ UNIVERSE: dict[str, ETF] = {
             name="iShares 20+ Year Treasury Bond ETF",
             asset_class=AssetClass.TREASURY,
             region=Region.US,
+            currency=Currency.USD,
             role=Role.LONG_DURATION_TREASURY,
             exposure=Exposure.CORE,
             description="Long-dated US government bonds. Most sensitive to interest-rate moves.",
+        ),
+        # --- Emerging-market debt ---------------------------------------------
+        ETF(
+            ticker=Ticker("LEMB"),
+            name="iShares J.P. Morgan EM Local Currency Bond ETF",
+            asset_class=AssetClass.EMERGING_DEBT,
+            region=Region.EMERGING_MARKETS,
+            currency=Currency.USD,
+            role=Role.EM_LOCAL_CURRENCY_DEBT,
+            exposure=Exposure.SATELLITE,
+            description=(
+                "Emerging-market bonds held in their own local currencies. Currency "
+                "risk on top of the credit risk of the issuers."
+            ),
         ),
     )
 }
@@ -227,4 +303,6 @@ def treasuries_by_duration() -> list[str]:
 
 EQUITIES: list[str] = by_asset_class(AssetClass.EQUITY)
 HIGH_YIELD: list[str] = by_asset_class(AssetClass.HIGH_YIELD)
+INVESTMENT_GRADE: list[str] = by_asset_class(AssetClass.INVESTMENT_GRADE)
 TREASURIES: list[str] = by_asset_class(AssetClass.TREASURY)
+EMERGING_DEBT: list[str] = by_asset_class(AssetClass.EMERGING_DEBT)

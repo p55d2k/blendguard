@@ -6,18 +6,21 @@ boundaries.
 
 ## ETF universe
 
-Fixed and small on purpose: **nine supported ETFs**, defined once in
+Fixed and small on purpose: **fourteen supported ETFs**, defined once in
 `backend/app/universe.py` and classified by `backend/app/taxonomy.py`.
 
 | Asset class | Tickers |
 | --- | --- |
-| Equity | VOO, VTI, VEA, VWO |
-| High yield | HYG, JNK |
+| Equity | VOO, SPY, VTI, VEA, VWO, STTF |
+| High yield | HYG, JNK, USHY |
 | Treasury | SHY, IEF, TLT |
+| Investment grade | LQD |
+| Emerging debt | LEMB |
 
-Each record also carries a region, a core/satellite exposure flag, a portfolio
-role, and a plain-language description. Full metadata, rationale per ETF, and
-the process for expanding the universe are in [universe.md](./universe.md).
+Each record also carries a region, a pricing currency, a core/satellite exposure
+flag, a portfolio role, and a plain-language description. Full metadata, rationale
+per ETF, and the process for expanding the universe are in
+[universe.md](./universe.md).
 
 ## Stage 1 — market data and risk estimation
 

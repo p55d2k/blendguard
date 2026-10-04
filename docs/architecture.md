@@ -53,11 +53,12 @@ MarketData  prices, assets, market_caps, metadata, as_of
 ```
 
 `Asset` is what a *data vendor* can tell you. BlendGuard's curated ETF metadata
-(portfolio role, core/satellite exposure, plain-language description, support
-status) lives in `app/domain/etf.py` and projects down to `Asset` via
-`asset_from_etf()`. The projection lives in the provider layer rather than as a
-method on the domain type, so `app.domain` never has to import `app.providers`.
-There is exactly one literal table; see [universe.md](./universe.md).
+(portfolio role, core/satellite exposure, pricing currency, plain-language
+description, support status) lives in `app/domain/etf.py` and projects down to
+`Asset` via `asset_from_etf()`. The projection lives in the provider layer rather
+than as a method on the domain type, so `app.domain` never has to import
+`app.providers`. There is exactly one literal table; see
+[universe.md](./universe.md).
 
 `MarketData.returns()` is the single definition of a daily return:
 

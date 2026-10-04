@@ -5,11 +5,20 @@
  * `backend/app/taxonomy.py`.
  */
 
-export const ASSET_CLASSES = ["equity", "high_yield", "treasury"] as const;
+export const ASSET_CLASSES = [
+  "equity",
+  "high_yield",
+  "treasury",
+  "investment_grade",
+  "emerging_debt",
+] as const;
 export type AssetClass = (typeof ASSET_CLASSES)[number];
 
-export const REGIONS = ["us", "developed_ex_us", "emerging_markets"] as const;
+export const REGIONS = ["us", "developed_ex_us", "emerging_markets", "singapore"] as const;
 export type Region = (typeof REGIONS)[number];
+
+export const CURRENCIES = ["usd", "sgd"] as const;
+export type Currency = (typeof CURRENCIES)[number];
 
 export const EXPOSURES = ["core", "satellite"] as const;
 export type Exposure = (typeof EXPOSURES)[number];
@@ -19,7 +28,10 @@ export const ROLES = [
   "us_total_market",
   "developed_international",
   "emerging_markets",
+  "singapore_large_cap",
   "high_yield_credit",
+  "investment_grade_credit",
+  "em_local_currency_debt",
   "short_duration_treasury",
   "intermediate_treasury",
   "long_duration_treasury",
@@ -30,12 +42,20 @@ export const ASSET_CLASS_LABELS: Record<AssetClass, string> = {
   equity: "Stocks",
   high_yield: "High-yield bonds",
   treasury: "Government bonds",
+  investment_grade: "Investment-grade bonds",
+  emerging_debt: "Emerging-market bonds",
 };
 
 export const REGION_LABELS: Record<Region, string> = {
   us: "United States",
   developed_ex_us: "Developed markets outside the US",
   emerging_markets: "Emerging markets",
+  singapore: "Singapore",
+};
+
+export const CURRENCY_LABELS: Record<Currency, string> = {
+  usd: "US dollars",
+  sgd: "Singapore dollars",
 };
 
 export interface ETF {
@@ -43,6 +63,7 @@ export interface ETF {
   name: string;
   asset_class: AssetClass;
   region: Region;
+  currency: Currency;
   role: Role;
   exposure: Exposure;
   description: string;

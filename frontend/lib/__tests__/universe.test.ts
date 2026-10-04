@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   ASSET_CLASSES,
   ASSET_CLASS_LABELS,
+  CURRENCIES,
+  CURRENCY_LABELS,
   EXPOSURES,
   REGIONS,
   REGION_LABELS,
@@ -16,6 +18,7 @@ function etf(overrides: Partial<ETF> & Pick<ETF, "ticker" | "asset_class">): ETF
   return {
     name: overrides.ticker,
     region: "us",
+    currency: "usd",
     role: "us_large_cap_core",
     exposure: "core",
     description: "test fixture",
@@ -52,15 +55,24 @@ describe("vocabulary completeness", () => {
     }
   });
 
+  it("labels every currency", () => {
+    for (const c of CURRENCIES) {
+      expect(CURRENCY_LABELS[c], `missing label for currency "${c}"`).toBeTruthy();
+    }
+  });
+
   it("has no orphan labels that no longer map to a member", () => {
     const acKeys = Object.keys(ASSET_CLASS_LABELS).sort();
     expect(acKeys).toEqual([...ASSET_CLASSES].sort());
     expect(Object.keys(REGION_LABELS).sort()).toEqual([...REGIONS].sort());
+    expect(Object.keys(CURRENCY_LABELS).sort()).toEqual([...CURRENCIES].sort());
   });
 
   it("keeps exposures and roles non-empty", () => {
     expect(EXPOSURES.length).toBeGreaterThan(0);
     expect(ROLES).toContain("high_yield_credit");
+    expect(ROLES).toContain("investment_grade_credit");
+    expect(ROLES).toContain("singapore_large_cap");
   });
 });
 
@@ -77,11 +89,24 @@ describe("groupByAssetClass", () => {
         etf({ ticker: "VOO", asset_class: "equity" }),
         etf({ ticker: "TLT", asset_class: "treasury", role: "long_duration_treasury" }),
         etf({ ticker: "HYG", asset_class: "high_yield", role: "high_yield_credit" }),
+        etf({
+          ticker: "LQD",
+          asset_class: "investment_grade",
+          role: "investment_grade_credit",
+        }),
+        etf({
+          ticker: "LEMB",
+          asset_class: "emerging_debt",
+          role: "em_local_currency_debt",
+          region: "emerging_markets",
+        }),
       ]),
     );
     expect(groups.get("equity")?.map((e) => e.ticker)).toEqual(["VOO"]);
     expect(groups.get("treasury")?.map((e) => e.ticker)).toEqual(["TLT"]);
     expect(groups.get("high_yield")?.map((e) => e.ticker)).toEqual(["HYG"]);
+    expect(groups.get("investment_grade")?.map((e) => e.ticker)).toEqual(["LQD"]);
+    expect(groups.get("emerging_debt")?.map((e) => e.ticker)).toEqual(["LEMB"]);
   });
 
   it("partitions every ETF exactly once", () => {

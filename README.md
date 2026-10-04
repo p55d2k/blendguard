@@ -19,7 +19,7 @@ User preferences → quantitative views → market prior → Black-Litterman
 | Document | Contents |
 | --- | --- |
 | [docs/architecture.md](docs/architecture.md) | Layers, market-data provider interface, caching, Bloomberg policy, API |
-| [docs/universe.md](docs/universe.md) | The canonical nine-ETF universe: metadata, taxonomy, roles, boundaries |
+| [docs/universe.md](docs/universe.md) | The canonical fourteen-ETF universe: metadata, taxonomy, roles, boundaries |
 | [docs/model.md](docs/model.md) | Risk estimation, Black-Litterman, view translation, constraints, presets, invariants |
 | [docs/README.md](docs/README.md) | Index and documentation conventions |
 
@@ -154,20 +154,25 @@ data. Dependabot watches `uv`, `npm`, and GitHub Actions.
 
 ## ETF universe
 
-Nine ETFs, defined once in `backend/app/universe.py` and served to the UI from
-`GET /api/universe`. No layer keeps its own ticker list.
+Fourteen ETFs, defined once in `backend/app/universe.py` and served to the UI
+from `GET /api/universe`. No layer keeps its own ticker list.
 
-| Ticker | Class | Region | Role |
-| --- | --- | --- | --- |
-| VOO | Equity | US | `us_large_cap_core` |
-| VTI | Equity | US | `us_total_market` |
-| VEA | Equity | Developed ex-US | `developed_international` |
-| VWO | Equity | Emerging Markets | `emerging_markets` |
-| HYG | High Yield | US | `high_yield_credit` |
-| JNK | High Yield | US | `high_yield_credit` |
-| SHY | Treasury | US | `short_duration_treasury` |
-| IEF | Treasury | US | `intermediate_treasury` |
-| TLT | Treasury | US | `long_duration_treasury` |
+| Ticker | Class | Region | Currency | Role |
+| --- | --- | --- | --- | --- |
+| VOO | Equity | US | USD | `us_large_cap_core` |
+| SPY | Equity | US | USD | `us_large_cap_core` |
+| VTI | Equity | US | USD | `us_total_market` |
+| VEA | Equity | Developed ex-US | USD | `developed_international` |
+| VWO | Equity | Emerging Markets | USD | `emerging_markets` |
+| STTF | Equity | Singapore | SGD | `singapore_large_cap` |
+| HYG | High Yield | US | USD | `high_yield_credit` |
+| JNK | High Yield | US | USD | `high_yield_credit` |
+| USHY | High Yield | US | USD | `high_yield_credit` |
+| LQD | Investment Grade | US | USD | `investment_grade_credit` |
+| SHY | Treasury | US | USD | `short_duration_treasury` |
+| IEF | Treasury | US | USD | `intermediate_treasury` |
+| TLT | Treasury | US | USD | `long_duration_treasury` |
+| LEMB | Emerging Debt | Emerging Markets | USD | `em_local_currency_debt` |
 
 See [docs/universe.md](docs/universe.md) for the rationale behind each ETF and
 the process for expanding the universe.

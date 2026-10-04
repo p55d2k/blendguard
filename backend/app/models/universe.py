@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
+from app.domain.types import Currency
 from app.taxonomy import AssetClass, Exposure, Region, Role
 from app.universe import ETF, TICKERS, UNIVERSE, supported_tickers, tickers_by_asset_class
 
@@ -17,6 +18,7 @@ class ETFOut(BaseModel):
     name: str
     asset_class: AssetClass
     region: Region
+    currency: Currency
     role: Role
     exposure: Exposure
     description: str
@@ -47,6 +49,7 @@ def to_out(etf: ETF) -> ETFOut:
         name=etf.name,
         asset_class=etf.asset_class,
         region=etf.region,
+        currency=etf.currency,
         role=etf.role,
         exposure=etf.exposure,
         description=etf.description,

@@ -25,7 +25,7 @@ from app.domain.optimization import (
     OptimizationStatus,
 )
 from app.domain.presets import Preset
-from app.domain.types import AssetClass, DomainValidationError, Ticker
+from app.domain.types import AssetClass, Currency, DomainValidationError, Ticker
 from app.domain.views import Confidence, View, ViewKind
 
 
@@ -113,6 +113,7 @@ def test_etf_rejects_a_raw_ticker() -> None:
             name="Vanguard S&P 500 ETF",
             asset_class=AssetClass.EQUITY,
             region=None,  # type: ignore[arg-type]
+            currency=Currency.USD,
             role=None,  # type: ignore[arg-type]
             exposure=None,  # type: ignore[arg-type]
             description="US large-company stocks.",

@@ -3,7 +3,7 @@
 | Document | Contents |
 | --- | --- |
 | [architecture.md](./architecture.md) | The four layers, provider interface, normalization, caching, Bloomberg policy, API surface |
-| [universe.md](./universe.md) | The canonical nine-ETF universe: metadata, taxonomy, roles, boundaries, how to extend |
+| [universe.md](./universe.md) | The canonical fourteen-ETF universe: metadata, taxonomy, roles, boundaries, how to extend |
 | [model.md](./model.md) | Risk estimation, Black-Litterman, view translation, constraints, presets, invariants |
 
 Planned, added as the corresponding code lands:

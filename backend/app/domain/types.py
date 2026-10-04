@@ -105,12 +105,15 @@ class Ticker(str):
 class Currency(StrEnum):
     """Currency of a monetary value.
 
-    The initial universe is entirely USD-denominated, so that is the only member.
-    Adding a currency is a deliberate universe-expansion change, not an
-    incidental edit.
+    One member per currency a supported ETF is *priced* in. ``SGD`` exists
+    because the Straits Times ETF trades in Singapore dollars: without it, an SGD
+    price series would be indistinguishable from a USD one. Note that this is the
+    trading currency, not the exposure -- ``LEMB`` is ``USD`` even though it holds
+    emerging-market bonds in their local currencies.
     """
 
     USD = "usd"
+    SGD = "sgd"
 
 
 # ---------------------------------------------------------------------------
