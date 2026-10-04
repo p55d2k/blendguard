@@ -22,7 +22,11 @@ app/
 ├── main.py            FastAPI entrypoint
 ├── universe.py        the canonical ETF universe
 ├── taxonomy.py        classification vocabulary
-├── config/            settings from environment variables
+├── config/            the only place environment variables are read
+│   ├── environment.py   Environment enum + per-environment defaults
+│   ├── settings.py      flat reader -> one frozen, grouped Settings
+│   ├── validation.py    fails fast, names the missing variable
+│   └── diagnostics.py   redacted, safe-to-log dump
 ├── providers/         DATA — MarketDataProvider interface
 │   ├── base.py        Asset / PriceSeries / MarketData + abstract provider
 │   └── stub.py        deterministic offline provider for tests
@@ -39,6 +43,36 @@ app/
 **Import rule:** dependencies point only *down* the chain. `providers` must
 never import `optimizer`; `optimizer` must never import `api`.
 
+**Configuration rule:** only `app/config/` may read `os.environ`. Everything else
+takes a `Settings`.
+
+## Configuration
+
+```python
+from app.config import get_settings, validate_for_startup
+
+settings = get_settings()
+settings.market_data.provider      # "stub"
+settings.features.verbose_explanations
+```
+
+`get_settings()` is cached for the process. The FastAPI lifespan calls
+`validate_for_startup()` before serving traffic, so bad configuration is a
+startup error, not a confusing request failure.
+
+`BLENDGUARD_ENV` selects `development` (default), `testing` or `production`.
+Dotenv is read from the repository root, then the working directory; override
+with `BLENDGUARD_ENV_FILE`. See [../.env.example](../.env.example).
+
+To print configuration for diagnostics, use the redaction helpers — never print
+the model or `os.environ`:
+
+```python
+from app.config import format_diagnostics, get_settings
+
+print(format_diagnostics(get_settings()))   # BLOOMBERG_API_KEY=********
+```
+
 ## Commands
 
 ```bash
@@ -47,6 +81,7 @@ uv run ruff format .         # format
 uv run mypy app              # strict types
 uv run pytest                # tests
 uv run pytest -m "not integration"   # offline only
+uv run python -c "from app.config import get_settings, validate_for_startup as v; v(get_settings())"  # validate config
 ```
 
 Pre-commit runs the lint, format, typecheck, and test gates automatically.
@@ -62,7 +97,8 @@ uv pip install \
 ```
 
 Then set `BLOOMBERG_ENABLED=true` in `.env`. Bloomberg must stay isolated behind
-`MarketDataProvider` and must never be required in production. Details:
+`MarketDataProvider` and must never be required in production — startup rejects
+`BLOOMBERG_ENABLED=true` under `BLENDGUARD_ENV=production`. Details:
 [docs/architecture.md](../docs/architecture.md).
 
 ## Testing
@@ -79,4 +115,7 @@ Markers:
 | `integration` | requires market data or network |
 | `bloomberg` | requires a Bloomberg Desktop API session |
 
-The default suite is fully offline and deterministic.
+The default suite is fully offline and deterministic. Configuration tests
+(`tests/config/`) are hermetic: they clear the ambient environment and redirect
+dotenv discovery, so the suite behaves identically in CI and on a developer
+machine that has real Bloomberg credentials in their shell.

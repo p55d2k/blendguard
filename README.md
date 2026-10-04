@@ -64,6 +64,39 @@ Then:
 
 Requires Python 3.12 and Node 22+.
 
+## Configuration
+
+Every runtime setting is declared once in `backend/app/config/`, and nothing
+else in the codebase reads environment variables. Three environments share one
+schema and are selected with `BLENDGUARD_ENV`:
+
+| | `development` | `testing` | `production` |
+| --- | --- | --- | --- |
+| log level | `DEBUG` | `WARNING` | `INFO` |
+| debug | on | off | off |
+| CORS origins | `localhost:3000` | none | none (set explicitly) |
+| market-data cache max age | 12h | 0h (never reuse) | 24h |
+| Bloomberg | allowed | off | **forbidden** |
+| credentials required | no | no | yes, for the selected provider |
+
+`BLENDGUARD_*` is for settings BlendGuard owns; `BLOOMBERG_*`, `TIINGO_*` and
+`FMP_*` keep the vendor's prefix so credentials match that vendor's docs and can
+be injected verbatim from a deployment secret store.
+[`.env.example`](.env.example) is the authoritative list.
+
+Production validates at startup and refuses to serve traffic on bad
+configuration, so a missing credential is one clear sentence rather than an
+obscure 500 later:
+
+```
+ConfigurationError: Production configuration requires TIINGO_API_KEY for
+market-data provider 'tiingo'. Inject it as an environment variable via your
+deployment platform's secret store; never commit it.
+```
+
+Secrets are `SecretStr`, so they render as `********` in logs and diagnostics.
+`GET /health` returns only status, version and environment.
+
 ## Commands
 
 ```bash
@@ -142,17 +175,21 @@ the process for expanding the universe.
 ## Principles
 
 1. **No secrets in the repository.** `.env`, API keys, database passwords, and
-   licensed datasets are never committed.
-2. **Bloomberg is a development and validation source only**, never a production
-   dependency, and never exposed through an API endpoint.
-3. **Market data is read from cache.** The optimizer does not fan out to
+   licensed datasets are never committed. Production credentials arrive only as
+   environment variables from a deployment platform's secret store.
+2. **Configuration has one owner.** Only `backend/app/config/` reads the
+   environment; the rest of the codebase takes a validated `Settings`.
+3. **Bloomberg is a development and validation source only**, never a production
+   dependency, and never exposed through an API endpoint. Startup rejects
+   `BLOOMBERG_ENABLED=true` under `BLENDGUARD_ENV=production`.
+4. **Market data is read from cache.** The optimizer does not fan out to
    providers per request.
-4. **Constraints are never silently relaxed.** An infeasible constraint set is
+5. **Constraints are never silently relaxed.** An infeasible constraint set is
    reported as an error.
-5. **The Black-Litterman formulation is fixed.** Changes are documented and
+6. **The Black-Litterman formulation is fixed.** Changes are documented and
    tested in the same change.
-6. **Every allocation is explained.** No unexplained "magic" weights.
-7. **Complexity is hidden, reasoning is not.** Users are never required to
+7. **Every allocation is explained.** No unexplained "magic" weights.
+8. **Complexity is hidden, reasoning is not.** Users are never required to
    understand covariance matrices, `tau`, or solvers.
 
 ## License

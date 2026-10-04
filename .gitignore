@@ -3,7 +3,11 @@
 # ---------------------------------------------------------------------------
 .env
 .env.*
+# Keep example/template files trackable. `.env.*` also matches
+# `.env.local.example`, so re-include the whole `*.example` shape. Nothing else
+# is re-included, so no real secret file becomes trackable.
 !.env.example
+!*.example
 *.pem
 *.key
 secrets/

@@ -118,7 +118,7 @@ backend/app/
 ├── main.py            FastAPI entrypoint, /health, CORS
 ├── universe.py        the canonical ETF universe
 ├── taxonomy.py        classification vocabulary
-├── config/            settings from environment variables
+├── config/            the only place environment variables are read
 ├── providers/         DATA — MarketDataProvider interface
 ├── optimizer/         MODEL + OPTIMIZER
 │   ├── risk.py              returns, covariance, correlation
@@ -129,6 +129,81 @@ backend/app/
 ├── models/            Pydantic request/response schemas
 └── api/               routes
 ```
+
+## CONFIG — one configuration layer
+
+```
+backend/app/config/
+├── environment.py   Environment enum + the values that differ per environment
+├── settings.py      the schema: one flat reader, one frozen grouped Settings
+├── validation.py    fails fast; names the missing variable
+└── diagnostics.py   the only sanctioned way to display configuration
+```
+
+`app.config` owns the boundary between the process environment and everything
+else. **No module outside `app/config/` reads `os.environ`.** Application code
+takes a `Settings` and reads typed attributes:
+
+```python
+from app.config import get_settings
+
+settings = get_settings()
+if settings.features.verbose_explanations:
+    ...
+```
+
+Three environments — `development`, `testing`, `production` — share one schema.
+They differ only in values, so switching environments never needs a code change.
+Select with `BLENDGUARD_ENV`; it defaults to `development`, and an unrecognised
+value is an error rather than a silent fallback.
+
+Precedence, highest first: environment variable → `.env` → per-environment
+profile → schema default.
+
+### Naming convention
+
+| Prefix | Owner | Example |
+| --- | --- | --- |
+| `BLENDGUARD_*` | BlendGuard | `BLENDGUARD_LOG_LEVEL` |
+| `BLOOMBERG_*` | the vendor | `BLOOMBERG_API_KEY` |
+| `TIINGO_*`, `FMP_*` | the vendor | `TIINGO_API_KEY` |
+
+Vendor settings keep the vendor's prefix so credentials map one-to-one onto that
+vendor's documentation and can be injected verbatim by a deployment platform's
+secret store. `.env.example` is the authoritative list.
+
+### Secrets
+
+Every credential is a `pydantic.SecretStr`, so `repr()` renders `********`.
+Configuration is never printed: `app.config.diagnostics.redacted_settings()` and
+`format_diagnostics()` build a dump from an explicit allowlist, revealing whether
+a credential is set but never its value. An explicitly listed secret is redacted
+by default, so a newly added one cannot silently become loggable. `/health`
+reports only status, version and environment.
+
+### Startup validation
+
+`validate_for_startup()` runs in the FastAPI lifespan, before the first request:
+
+- Production rejects the `stub` provider — it returns synthetic prices, not
+  market data.
+- Production requires the **selected** provider's credentials, and names the
+  variable: `Production configuration requires TIINGO_API_KEY for ...`.
+- `BLOOMBERG_ENABLED` must be false in production.
+- Development and testing require no credentials at all, so the suite runs with
+  no Bloomberg Terminal and no API keys.
+
+Missing configuration is never substituted with a fake value: a placeholder
+credential turns into an authentication error much later, which is harder to
+diagnose than a startup failure.
+
+### Supplying production secrets
+
+Production credentials are injected as environment variables by the deployment
+platform's secret store (GitHub Actions secrets, Fly secrets, Kubernetes
+`SecretKeyRef`, and so on). They are never committed, never baked into the
+package or a container image, and never written to a committed file. See
+`README.md` for the deployment recipe.
 
 ## Frontend layout
 

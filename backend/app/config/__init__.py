@@ -1,40 +1,89 @@
-"""Runtime settings loaded from environment variables.
+"""Configuration layer.
 
-All secrets come from here. ``.env`` is never committed; see ``.env.example``.
+The single boundary between the process environment and the rest of the
+application. Application code imports from here and nowhere else; no module
+outside this package reads ``os.environ``.
+
+Typical use::
+
+    from app.config import get_settings
+
+    settings = get_settings()
+    if settings.features.verbose_explanations:
+        ...
+
+At startup the application validates configuration and fails loudly rather than
+deferring the error to the first request::
+
+    from app.config import get_settings, validate_for_startup
+
+    settings = get_settings()
+    validate_for_startup(settings)
+
+See ``.env.example`` for the documented variables and ``docs/architecture.md``
+for the layering rules.
 """
 
 from __future__ import annotations
 
-from functools import lru_cache
-from pathlib import Path
+from app.config.diagnostics import REDACTED, format_diagnostics, redacted_settings
+from app.config.environment import (
+    DEFAULT_ENVIRONMENT,
+    ENV_VAR,
+    Environment,
+    EnvironmentProfile,
+    profile_for,
+)
+from app.config.settings import (
+    ENV_FILE_VAR,
+    REPO_ROOT,
+    ApiSettings,
+    BloombergSettings,
+    FeatureFlags,
+    FMPSettings,
+    LoggingSettings,
+    MarketDataSettings,
+    Settings,
+    TiingoSettings,
+    default_env_files,
+    get_settings,
+    load_settings,
+    reset_settings_cache,
+)
+from app.config.validation import (
+    NON_PRODUCTION_PROVIDERS,
+    REQUIRED_CREDENTIALS,
+    ConfigurationError,
+    validate,
+    validate_for_startup,
+)
 
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
-
-    env: str = "development"
-    log_level: str = "INFO"
-
-    market_data_provider: str = "yfinance"
-    market_data_cache_dir: Path = Path("./data/cache")
-
-    bloomberg_enabled: bool = False
-    bloomberg_host: str = "localhost"
-    bloomberg_port: int = 8194
-
-    tiingo_api_key: str | None = None
-    fmp_api_key: str | None = None
-
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
-
-
-@lru_cache(maxsize=1)
-def get_settings() -> Settings:
-    return Settings()
+__all__ = [
+    "DEFAULT_ENVIRONMENT",
+    "ENV_FILE_VAR",
+    "ENV_VAR",
+    "NON_PRODUCTION_PROVIDERS",
+    "REDACTED",
+    "REPO_ROOT",
+    "REQUIRED_CREDENTIALS",
+    "ApiSettings",
+    "BloombergSettings",
+    "ConfigurationError",
+    "Environment",
+    "EnvironmentProfile",
+    "FMPSettings",
+    "FeatureFlags",
+    "LoggingSettings",
+    "MarketDataSettings",
+    "Settings",
+    "TiingoSettings",
+    "default_env_files",
+    "format_diagnostics",
+    "get_settings",
+    "load_settings",
+    "profile_for",
+    "redacted_settings",
+    "reset_settings_cache",
+    "validate",
+    "validate_for_startup",
+]
