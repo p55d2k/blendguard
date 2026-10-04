@@ -9,22 +9,45 @@ Design rules for this file:
 * Metadata only. No finance, no optimization, no presentation logic.
 * Adding an ETF is a deliberate universe expansion: update this table, the
   documentation, and the tests together.
+
+The :class:`ETF` type itself lives in :mod:`app.domain.etf` and is re-exported
+here, so importing it from either module works. This module owns the *table*;
+the domain module owns the *type*.
 """
 
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
 
-from app.providers.base import Asset
+from app.domain.etf import ETF
+from app.domain.types import Ticker
 from app.taxonomy import (
     TREASURY_DURATION_ORDER,
     AssetClass,
     Exposure,
     Region,
     Role,
-    duration_rank,
 )
+
+__all__ = [
+    "EQUITIES",
+    "ETF",
+    "HIGH_YIELD",
+    "TICKERS",
+    "TREASURIES",
+    "UNIVERSE",
+    "UnsupportedTickerError",
+    "by_asset_class",
+    "by_exposure",
+    "by_region",
+    "by_role",
+    "get",
+    "require_supported",
+    "select_tickers",
+    "supported_tickers",
+    "tickers_by_asset_class",
+    "treasuries_by_duration",
+]
 
 
 class UnsupportedTickerError(ValueError):
@@ -43,81 +66,18 @@ class UnsupportedTickerError(ValueError):
         )
 
 
-@dataclass(frozen=True, slots=True)
-class ETF:
-    """Reference metadata for one supported ETF.
-
-    Attributes
-    ----------
-    ticker:
-        Exchange ticker, unique across the universe.
-    name:
-        Full fund name.
-    asset_class:
-        One of the three initial asset classes.
-    region:
-        Broad portfolio-level geographic exposure.
-    role:
-        Portfolio purpose. Overlapping ETFs may share a role.
-    exposure:
-        Core building block or satellite add-on.
-    description:
-        One plain-language sentence, safe to show a non-technical user.
-    supported:
-        Whether BlendGuard currently supports this ETF. Only supported ETFs may
-        enter the optimizer.
-    """
-
-    ticker: str
-    name: str
-    asset_class: AssetClass
-    region: Region
-    role: Role
-    exposure: Exposure
-    description: str
-    supported: bool = True
-
-    def to_asset(self) -> Asset:
-        """Project this record onto the provider-normalized reference type."""
-        return Asset(
-            ticker=self.ticker,
-            name=self.name,
-            asset_class=self.asset_class,
-            region=self.region,
-        )
-
-    @property
-    def is_treasury(self) -> bool:
-        return self.asset_class is AssetClass.TREASURY
-
-    @property
-    def duration_rank(self) -> int | None:
-        """1 (shortest) .. 3 (longest) for Treasuries, else ``None``."""
-        return duration_rank(self.role)
-
-    def to_dict(self) -> dict[str, str | bool]:
-        """Flat, JSON-ready metadata. Single source for API serialization."""
-        return {
-            "ticker": self.ticker,
-            "name": self.name,
-            "asset_class": str(self.asset_class),
-            "region": str(self.region),
-            "role": str(self.role),
-            "exposure": str(self.exposure),
-            "description": self.description,
-            "supported": self.supported,
-        }
-
-
 # ---------------------------------------------------------------------------
 # The universe. Nine ETFs, three asset classes, three regions, eight roles.
 # ---------------------------------------------------------------------------
+#: Keyed by plain ``str`` so a caller holding an unvalidated symbol can look a
+#: record up without a cast; :class:`~app.domain.types.Ticker` hashes equal to its
+#: own text, so validated and raw symbols index the same table.
 UNIVERSE: dict[str, ETF] = {
-    etf.ticker: etf
+    str(etf.ticker): etf
     for etf in (
         # --- Equity -----------------------------------------------------------
         ETF(
-            ticker="VOO",
+            ticker=Ticker("VOO"),
             name="Vanguard S&P 500 ETF",
             asset_class=AssetClass.EQUITY,
             region=Region.US,
@@ -126,7 +86,7 @@ UNIVERSE: dict[str, ETF] = {
             description="US large-company stocks. The default engine of a US equity core.",
         ),
         ETF(
-            ticker="VTI",
+            ticker=Ticker("VTI"),
             name="Vanguard Total Stock Market ETF",
             asset_class=AssetClass.EQUITY,
             region=Region.US,
@@ -135,7 +95,7 @@ UNIVERSE: dict[str, ETF] = {
             description="All US stocks, large and small. Broader and cheaper than VOO.",
         ),
         ETF(
-            ticker="VEA",
+            ticker=Ticker("VEA"),
             name="Vanguard FTSE Developed Markets ETF",
             asset_class=AssetClass.EQUITY,
             region=Region.DEVELOPED_EX_US,
@@ -144,7 +104,7 @@ UNIVERSE: dict[str, ETF] = {
             description="Stocks from developed markets outside the United States.",
         ),
         ETF(
-            ticker="VWO",
+            ticker=Ticker("VWO"),
             name="Vanguard FTSE Emerging Markets ETF",
             asset_class=AssetClass.EQUITY,
             region=Region.EMERGING_MARKETS,
@@ -154,7 +114,7 @@ UNIVERSE: dict[str, ETF] = {
         ),
         # --- High yield -------------------------------------------------------
         ETF(
-            ticker="HYG",
+            ticker=Ticker("HYG"),
             name="iShares iBoxx $ High Yield Corporate Bond ETF",
             asset_class=AssetClass.HIGH_YIELD,
             region=Region.US,
@@ -163,7 +123,7 @@ UNIVERSE: dict[str, ETF] = {
             description="Lower-rated corporate bonds. More income and default risk than Treasuries.",
         ),
         ETF(
-            ticker="JNK",
+            ticker=Ticker("JNK"),
             name="SPDR Bloomberg High Yield Bond ETF",
             asset_class=AssetClass.HIGH_YIELD,
             region=Region.US,
@@ -173,7 +133,7 @@ UNIVERSE: dict[str, ETF] = {
         ),
         # --- Treasuries -------------------------------------------------------
         ETF(
-            ticker="SHY",
+            ticker=Ticker("SHY"),
             name="iShares 1-3 Year Treasury Bond ETF",
             asset_class=AssetClass.TREASURY,
             region=Region.US,
@@ -182,7 +142,7 @@ UNIVERSE: dict[str, ETF] = {
             description="Short-dated US government bonds. The least rate-sensitive sleeve.",
         ),
         ETF(
-            ticker="IEF",
+            ticker=Ticker("IEF"),
             name="iShares 7-10 Year Treasury Bond ETF",
             asset_class=AssetClass.TREASURY,
             region=Region.US,
@@ -191,7 +151,7 @@ UNIVERSE: dict[str, ETF] = {
             description="Medium-dated US government bonds. The middle of the duration range.",
         ),
         ETF(
-            ticker="TLT",
+            ticker=Ticker("TLT"),
             name="iShares 20+ Year Treasury Bond ETF",
             asset_class=AssetClass.TREASURY,
             region=Region.US,

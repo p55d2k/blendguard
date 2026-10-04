@@ -6,7 +6,12 @@ mathematical layer. Nothing here may import an optimizer or model symbol.
 ``Asset`` is the provider-normalized shape of reference data: what a data vendor
 can tell us about a security. BlendGuard's curated ETF metadata (portfolio role,
 exposure kind, plain-language description, support status) lives in
-:mod:`app.universe` and projects down to ``Asset`` via ``ETF.to_asset()``.
+:mod:`app.domain.etf` and is projected down to ``Asset`` by
+:func:`asset_from_etf`.
+
+The projection lives here rather than as a method on the domain type on purpose.
+``Asset`` is a provider-boundary type, so a domain model that produced one would
+be reaching back across the layer it exists to sit above.
 """
 
 from __future__ import annotations
@@ -14,10 +19,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import date
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from app.taxonomy import AssetClass, Region
+
+if TYPE_CHECKING:
+    from app.domain.etf import ETF
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +37,20 @@ class Asset:
     name: str
     asset_class: AssetClass
     region: Region
+
+
+def asset_from_etf(etf: ETF) -> Asset:
+    """Project curated ETF metadata onto the provider-normalized type.
+
+    Drops role, exposure, description and support status: those are BlendGuard's
+    own opinions, not vendor facts, and the provider layer has no use for them.
+    """
+    return Asset(
+        ticker=str(etf.ticker),
+        name=etf.name,
+        asset_class=etf.asset_class,
+        region=etf.region,
+    )
 
 
 @dataclass(frozen=True, slots=True)

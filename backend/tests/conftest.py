@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from app.providers.base import MarketData
+from app.providers.base import MarketData, asset_from_etf
 from app.taxonomy import AssetClass, Region
 from app.universe import TICKERS, UNIVERSE
 
@@ -44,7 +44,7 @@ def synthetic_market_data(synthetic_prices: pd.DataFrame, tickers: list[str]) ->
     Reference data comes from the universe so fixtures cannot drift from what
     the API and the model report.
     """
-    assets = {t: UNIVERSE[t].to_asset() for t in tickers}
+    assets = {t: asset_from_etf(UNIVERSE[t]) for t in tickers}
     return MarketData(
         prices=synthetic_prices,
         assets=assets,

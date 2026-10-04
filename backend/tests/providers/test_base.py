@@ -11,7 +11,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from app.providers.base import Asset, MarketData, PriceSeries
+from app.providers.base import Asset, MarketData, PriceSeries, asset_from_etf
 from app.providers.stub import StubProvider
 from app.taxonomy import AssetClass
 from app.universe import UNIVERSE, UnsupportedTickerError
@@ -27,7 +27,7 @@ def test_stub_provider_reference_data_comes_from_the_canonical_universe(
     tickers: list[str],
 ) -> None:
     assets = StubProvider().get_reference_data(tickers)
-    assert assets == {t: UNIVERSE[t].to_asset() for t in tickers}
+    assert assets == {t: asset_from_etf(UNIVERSE[t]) for t in tickers}
 
 
 def test_stub_provider_rejects_unsupported_tickers_in_prices() -> None:
@@ -70,7 +70,7 @@ def test_market_data_assets_must_cover_price_columns() -> None:
 def test_market_data_infers_as_of_from_the_last_observation() -> None:
     index = pd.to_datetime(["2024-01-02", "2024-01-03"])
     frame = pd.DataFrame({"VOO": [1.0, 2.0]}, index=index)
-    assert MarketData(prices=frame, assets={"VOO": UNIVERSE["VOO"].to_asset()}).as_of == date(
+    assert MarketData(prices=frame, assets={"VOO": asset_from_etf(UNIVERSE["VOO"])}).as_of == date(
         2024, 1, 3
     )
 
@@ -99,6 +99,6 @@ def test_asset_requires_a_classification() -> None:
 
 
 def test_asset_dataclass_is_immutable() -> None:
-    asset = UNIVERSE["VOO"].to_asset()
+    asset = asset_from_etf(UNIVERSE["VOO"])
     with pytest.raises(AttributeError):
         asset.ticker = "VTI"  # type: ignore[misc]

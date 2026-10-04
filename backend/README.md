@@ -27,13 +27,20 @@ app/
 │   ├── settings.py      flat reader -> one frozen, grouped Settings
 │   ├── validation.py    fails fast, names the missing variable
 │   └── diagnostics.py   redacted, safe-to-log dump
+├── domain/            shared vocabulary — no framework, no app imports
+│   ├── types.py           Ticker, Currency, DomainValidationError, validators
+│   ├── etf.py             ETF (the type; the table stays in universe.py)
+│   ├── market.py          Price, Return
+│   ├── views.py           View, Confidence
+│   ├── constraints.py     Constraint, ConstraintSet
+│   ├── presets.py         Preset — Conservative / Balanced / Growth
+│   └── optimization.py    OptimizationRequest, OptimizationResult
 ├── providers/         DATA — MarketDataProvider interface
 │   ├── base.py        Asset / PriceSeries / MarketData + abstract provider
 │   └── stub.py        deterministic offline provider for tests
 ├── optimizer/         MODEL + OPTIMIZER
 │   ├── risk.py              returns, covariance, correlation
 │   ├── black_litterman.py   prior, views, posterior E(R)
-│   ├── presets.py           Conservative / Balanced / Growth
 │   └── allocate.py          constrained optimization
 ├── services/          orchestration only, no finance
 ├── models/            Pydantic request/response schemas
@@ -43,8 +50,16 @@ app/
 **Import rule:** dependencies point only *down* the chain. `providers` must
 never import `optimizer`; `optimizer` must never import `api`.
 
+`app/domain/` sits *beside* that chain, not in it: it is the vocabulary all four
+stages share, so it imports nothing third-party and nothing from the rest of
+`app`. `app/models/` stays the Pydantic API layer. Both rules are enforced by
+tests, in `tests/domain/test_layering.py`.
+
 **Configuration rule:** only `app/config/` may read `os.environ`. Everything else
 takes a `Settings`.
+
+**Numeric rule:** every fractional quantity is a plain fraction. `0.25` is 25%.
+`Constraint`/`Allocation` reject `25` rather than quietly accepting it.
 
 ## Configuration
 
@@ -52,7 +67,7 @@ takes a `Settings`.
 from app.config import get_settings, validate_for_startup
 
 settings = get_settings()
-settings.market_data.provider      # "stub"
+settings.market_data.provider  # "stub"
 settings.features.verbose_explanations
 ```
 
@@ -70,7 +85,7 @@ the model or `os.environ`:
 ```python
 from app.config import format_diagnostics, get_settings
 
-print(format_diagnostics(get_settings()))   # BLOOMBERG_API_KEY=********
+print(format_diagnostics(get_settings()))  # BLOOMBERG_API_KEY=********
 ```
 
 ## Commands

@@ -155,7 +155,13 @@ objectively correct portfolios.
 | Growth | Higher equity exposure, looser Treasury minimums |
 
 Concrete numbers (equity max, Treasury min, single-ETF max) live in
-`app/optimizer/presets.py` and are documented in `docs/presets.md`.
+`app/domain/presets.py` and are documented in `docs/presets.md`.
+
+**Status: the numbers are not chosen yet.** The three presets are registered in
+`app/domain/presets.py` with empty constraint sets, enforced by a test. Until the
+figures are documented in `docs/presets.md`, a preset contributes a name and a
+description and nothing else — deliberately better than a plausible-looking limit
+nobody chose on purpose, which would silently cap a user's portfolio.
 
 ## Explainability
 

@@ -54,9 +54,10 @@ MarketData  prices, assets, market_caps, metadata, as_of
 
 `Asset` is what a *data vendor* can tell you. BlendGuard's curated ETF metadata
 (portfolio role, core/satellite exposure, plain-language description, support
-status) lives in `app/universe.py` and projects down to `Asset` via
-`ETF.to_asset()`. There is exactly one literal table; see
-[universe.md](./universe.md).
+status) lives in `app/domain/etf.py` and projects down to `Asset` via
+`asset_from_etf()`. The projection lives in the provider layer rather than as a
+method on the domain type, so `app.domain` never has to import `app.providers`.
+There is exactly one literal table; see [universe.md](./universe.md).
 
 `MarketData.returns()` is the single definition of a daily return:
 
@@ -116,19 +117,78 @@ optimizer  ←───────────────────── op
 ```
 backend/app/
 ├── main.py            FastAPI entrypoint, /health, CORS
-├── universe.py        the canonical ETF universe
+├── universe.py        the canonical ETF universe (the table)
 ├── taxonomy.py        classification vocabulary
 ├── config/            the only place environment variables are read
+├── domain/            shared vocabulary: no framework, no app dependencies
 ├── providers/         DATA — MarketDataProvider interface
 ├── optimizer/         MODEL + OPTIMIZER
 │   ├── risk.py              returns, covariance, correlation
 │   ├── black_litterman.py   prior, views, posterior expected returns
-│   ├── presets.py           Conservative / Balanced / Growth
 │   └── allocate.py          constrained optimization
 ├── services/          orchestration only; contains no finance
 ├── models/            Pydantic request/response schemas
 └── api/               routes
 ```
+
+## The domain layer — shared vocabulary, not a fifth stage
+
+```
+DATA ─┐
+MODEL ├─> all speak app.domain ─> OPTIMIZER ─> PRESENTATION
+```
+
+`app/domain/` is not another stage in the pipeline. It is the vocabulary the
+existing four stages share, so there is exactly one definition of a ticker, a
+weight, a view, and a constraint:
+
+| Module | Owns |
+| --- | --- |
+| `types.py` | `Ticker`, `Currency`, `DomainValidationError`, numeric validators |
+| `etf.py` | `ETF` — the *type*. The *table* stays in `app/universe.py`. |
+| `market.py` | `Price`, `Return` — one observation of one ETF on one date |
+| `views.py` | `View`, `Confidence` — what the user believes |
+| `constraints.py` | `Constraint`, `ConstraintSet` — limits that must hold |
+| `presets.py` | `Preset` — a named bundle of the above |
+| `optimization.py` | `OptimizationRequest`, `OptimizationResult`, `Allocation` |
+
+Two rules are enforced by tests in `backend/tests/domain/test_layering.py`, not
+just by convention:
+
+- **no third-party imports.** No pydantic, no pandas, no numpy, no solver. A
+  domain type that needs a framework is a transport or numerics concern wearing a
+  domain costume, and it makes the model unusable from a backtest.
+- **no outbound app imports.** Nothing in `app/domain` may import `app.providers`,
+  `app.universe`, `app.optimizer`, `app.models` or `app.api`. The universe is the
+  sharpest case: it is *data*, and the domain is the vocabulary that data has to
+  be described in. Where the domain needs a value the rest of the app defines,
+  the value lives here and the app imports it.
+
+`app/models/` remains the Pydantic API layer, and `app/taxonomy.py` remains the
+home of the canonical enums, which the domain re-exports.
+
+### Conventions the domain enforces
+
+- **Fractions, never percentages.** `0.25` is 25%. `require_unit_interval`
+  rejects `25` with a message saying why, because the percentage/decimal mix-up is
+  the single most likely mistake in this codebase and is otherwise invisible
+  until the optimizer produces a nonsense portfolio.
+- **No competing representations.** There is no `Weight` or `Return` wrapper
+  type. A plain number plus a documented convention is easier to get right than a
+  class that has to interoperate with a solver.
+- **`Confidence` carries no number.** It is an ordinal label. The mapping to Omega
+  belongs to the MODEL layer, so UI wording never quietly becomes a mathematical
+  assumption.
+- **Outcomes are structural.** `INFEASIBLE` and `FAILED` are distinct statuses,
+  not exceptions. A user whose own limits conflict deserves a clear message, not a
+  500.
+- **Weights sum to 1** on any successful result, within `WEIGHT_SUM_TOLERANCE` =
+  1e-6. Checked at construction rather than trusted to the solver.
+
+Presets are currently registered with **empty constraint sets**. The financial
+numbers behind Conservative / Balanced / Growth are product assumptions that
+belong in `docs/presets.md`, validated separately; a plausible-looking limit that
+nobody chose on purpose is worse than no limit at all.
 
 ## CONFIG — one configuration layer
 

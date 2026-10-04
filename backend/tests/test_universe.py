@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import pytest
 
+from app.domain.types import Ticker
 from app.models.universe import ETFOut
-from app.providers.base import Asset
+from app.providers.base import Asset, asset_from_etf
 from app.taxonomy import (
     TREASURY_DURATION_ORDER,
     AssetClass,
@@ -59,7 +60,7 @@ def test_require_supported_rejects_an_unsupported_flagged_etf(
     shadowed = {
         **UNIVERSE,
         "QQQ": get("VOO").__class__(
-            ticker="QQQ",
+            ticker=Ticker("QQQ"),
             name="Invesco QQQ Trust",
             asset_class=AssetClass.EQUITY,
             region=Region.US,
@@ -231,17 +232,17 @@ def test_high_yield_is_the_only_satellite_sleeve() -> None:
 
 
 # --- single canonical definition -------------------------------------------
-def test_to_asset_projects_onto_the_normalized_provider_type() -> None:
-    asset = get("VEA").to_asset()
+def test_asset_from_etf_projects_onto_the_normalized_provider_type() -> None:
+    asset = asset_from_etf(get("VEA"))
     assert isinstance(asset, Asset)
     assert asset.ticker == "VEA"
     assert asset.asset_class is AssetClass.EQUITY
     assert asset.region is Region.DEVELOPED_EX_US
 
 
-def test_to_asset_preserves_vendor_visible_fields() -> None:
+def test_asset_from_etf_preserves_vendor_visible_fields() -> None:
     for ticker in EXPECTED_TICKERS:
-        etf, asset = UNIVERSE[ticker], UNIVERSE[ticker].to_asset()
+        etf, asset = UNIVERSE[ticker], asset_from_etf(UNIVERSE[ticker])
         assert (asset.ticker, asset.name) == (etf.ticker, etf.name)
         assert (asset.asset_class, asset.region) == (etf.asset_class, etf.region)
 

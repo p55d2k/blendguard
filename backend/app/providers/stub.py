@@ -13,7 +13,7 @@ from datetime import date
 import numpy as np
 import pandas as pd
 
-from app.providers.base import Asset, MarketDataProvider, PriceSeries
+from app.providers.base import Asset, MarketDataProvider, PriceSeries, asset_from_etf
 from app.universe import UNIVERSE, require_supported
 
 
@@ -46,4 +46,4 @@ class StubProvider(MarketDataProvider):
 
     def get_reference_data(self, tickers: list[str]) -> dict[str, Asset]:
         require_supported(tickers)
-        return {t: UNIVERSE[t].to_asset() for t in tickers}
+        return {t: asset_from_etf(UNIVERSE[t]) for t in tickers}
